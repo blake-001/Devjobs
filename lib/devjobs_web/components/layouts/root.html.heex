@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <.live_title default="Devjobs" phx-no-format>{assigns[:page_title]}</.live_title>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
+    </script>
+    <script>
+      (() => {
+        const root = document.documentElement;
+        const media = matchMedia("(prefers-color-scheme: dark)");
+
+        const apply = () => {
+          let saved = null;
+          try { saved = localStorage.getItem("theme"); } catch (_) {}
+          const dark = saved ? saved === "dark" : media.matches;
+          root.classList.toggle("dark", dark);
+        };
+
+        apply();
+        media.addEventListener("change", apply);
+        window.addEventListener("storage", (e) => e.key === "theme" && apply());
+        window.addEventListener("toggle-theme", () => {
+          const dark = !root.classList.contains("dark");
+          try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (_) {}
+          apply();
+        });
+      })();
+    </script>
+  </head>
+  <body class="bg-light-grey font-sans text-midnight dark:bg-very-dark-blue dark:text-white">
+    {@inner_content}
+  </body>
+</html>
