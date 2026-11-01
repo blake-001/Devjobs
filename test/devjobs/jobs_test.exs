@@ -2,7 +2,7 @@ defmodule Devjobs.JobsTest do
   use Devjobs.DataCase, async: true
 
   alias Devjobs.Jobs
-  alias Devjobs.Jobs.{Company, Job}
+  alias Devjobs.Jobs.{Attachment, Company, Job}
   alias Devjobs.Repo
 
   defp company!(name \\ "Acme") do
@@ -131,11 +131,43 @@ defmodule Devjobs.JobsTest do
 
     test "saves attachments with the application", %{job: job} do
       files = [
-        %{filename: "cv.pdf", path: "/tmp/cv.pdf", content_type: "application/pdf", size: 10}
+        %{
+          document_type: "cv",
+          filename: "cv.pdf",
+          path: "/tmp/cv.pdf",
+          content_type: "application/pdf",
+          size: 10
+        },
+        %{
+          document_type: "cover_letter",
+          filename: "cover-letter.pdf",
+          path: "/tmp/cover-letter.pdf",
+          content_type: "application/pdf",
+          size: 20
+        }
       ]
 
       assert {:ok, app} = Jobs.create_application(job, @valid, files)
-      assert [%{filename: "cv.pdf"}] = Repo.preload(app, :attachments).attachments
+
+      assert [
+               %{document_type: "cover_letter", filename: "cover-letter.pdf"},
+               %{document_type: "cv", filename: "cv.pdf"}
+             ] =
+               app
+               |> Repo.preload(:attachments)
+               |> Map.fetch!(:attachments)
+               |> Enum.map(&%{document_type: &1.document_type, filename: &1.filename})
+               |> Enum.sort_by(& &1.document_type)
+    end
+
+    test "only accepts CV and cover letter document types" do
+      attrs = %{filename: "resume.pdf", path: "/tmp/resume.pdf"}
+
+      assert Attachment.changeset(%Attachment{}, Map.put(attrs, :document_type, "cv")).valid?
+
+      assert Attachment.changeset(%Attachment{}, Map.put(attrs, :document_type, "cover_letter")).valid?
+
+      refute Attachment.changeset(%Attachment{}, Map.put(attrs, :document_type, "other")).valid?
     end
   end
 end

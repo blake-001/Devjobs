@@ -7,6 +7,23 @@ To start your Phoenix server:
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
+## Admin applications
+
+The admin area uses environment-configured credentials. Set both variables before
+starting the server; there are no built-in/default admin credentials:
+
+```sh
+export ADMIN_EMAIL="admin@example.com"
+export ADMIN_PASSWORD="replace-with-a-long-random-password"
+mix phx.server
+```
+
+Open [`http://localhost:4000/admin/login`](http://localhost:4000/admin/login) and
+sign in to review applications. The dashboard shows applicant details, the job
+description, and download links for uploaded CVs and cover letters. Use **Download
+CSV** to export application and job details. Set the same environment variables
+in the production runtime and serve the admin area over HTTPS.
+
 Ready to run in production? Please [check our deployment guides](https://phoenix.hexdocs.pm/deployment.html).
 
 ## Learn more

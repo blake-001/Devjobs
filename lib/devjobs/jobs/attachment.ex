@@ -3,6 +3,7 @@ defmodule Devjobs.Jobs.Attachment do
   import Ecto.Changeset
 
   schema "attachments" do
+    field :document_type, :string
     field :filename, :string
     field :path, :string
     field :content_type, :string
@@ -16,7 +17,8 @@ defmodule Devjobs.Jobs.Attachment do
   @doc false
   def changeset(attachment, attrs) do
     attachment
-    |> cast(attrs, [:filename, :path, :content_type, :size])
-    |> validate_required([:filename, :path])
+    |> cast(attrs, [:document_type, :filename, :path, :content_type, :size])
+    |> validate_required([:document_type, :filename, :path])
+    |> validate_inclusion(:document_type, ["cv", "cover_letter"])
   end
 end

@@ -14,11 +14,34 @@ defmodule DevjobsWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :admin do
+    plug DevjobsWeb.AdminAuth
+  end
+
   scope "/", DevjobsWeb do
     pipe_through :browser
 
     live "/", JobLive.Index, :index
     live "/jobs/:id", JobLive.Show, :show
+  end
+
+  scope "/admin", DevjobsWeb do
+    pipe_through :browser
+
+    get "/login", AdminSessionController, :new
+    post "/login", AdminSessionController, :create
+    get "/logout", AdminSessionController, :delete
+  end
+
+  scope "/admin", DevjobsWeb do
+    pipe_through [:browser, :admin]
+
+    live_session :admin, on_mount: [{DevjobsWeb.AdminAuth, :ensure_admin}] do
+      live "/applications", AdminApplicationsLive, :index
+    end
+
+    get "/applications.csv", AdminApplicationsController, :export
+    get "/attachments/:id", AdminApplicationsController, :download
   end
 
   # Other scopes may use custom stacks.

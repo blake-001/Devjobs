@@ -1,0 +1,38 @@
+<main class="mx-auto mt-20 max-w-md rounded-lg bg-white p-8 shadow-lg dark:bg-midnight">
+  <h1 class="text-2xl font-bold">Admin sign in</h1>
+  <p class="mt-2 text-dark-grey">Sign in to review job applications.</p>
+
+  <p :if={@error} role="alert" class="mt-4 text-sm text-red-500">{@error}</p>
+
+  <.form for={%{}} action={~p"/admin/login"} method="post" class="mt-6 space-y-4">
+    <input type="hidden" name="_csrf_token" value={@csrf_token} />
+    <div>
+      <label for="admin-email" class="font-bold">Email</label>
+      <input
+        id="admin-email"
+        type="email"
+        name="admin[email]"
+        autocomplete="email"
+        required
+        class="mt-2 w-full rounded-md border border-dark-grey/30 bg-transparent px-4 py-3"
+      />
+    </div>
+    <div>
+      <label for="admin-password" class="font-bold">Password</label>
+      <input
+        id="admin-password"
+        type="password"
+        name="admin[password]"
+        autocomplete="current-password"
+        required
+        class="mt-2 w-full rounded-md border border-dark-grey/30 bg-transparent px-4 py-3"
+      />
+    </div>
+    <button
+      type="submit"
+      class="w-full cursor-pointer rounded-md bg-violet px-6 py-3 font-bold text-white transition hover:bg-light-violet"
+    >
+      Sign in
+    </button>
+  </.form>
+</main>

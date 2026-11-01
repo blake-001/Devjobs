@@ -78,6 +78,20 @@ defmodule Devjobs.Jobs do
 
   def already_applied?(_job_id, _email), do: false
 
+  def list_applications do
+    Application
+    |> order_by([a], desc: a.inserted_at, desc: a.id)
+    |> preload([:attachments, job: :company])
+    |> Repo.all()
+  end
+
+  def get_attachment(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {attachment_id, ""} when attachment_id > 0 -> Repo.get(Attachment, attachment_id)
+      _ -> nil
+    end
+  end
+
   def create_application(%Job{} = job, attrs, attachments \\ []) do
     Repo.transaction(fn ->
       changeset = Application.changeset(%Application{job_id: job.id}, attrs)

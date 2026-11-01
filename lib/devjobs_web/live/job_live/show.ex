@@ -13,9 +13,14 @@ defmodule DevjobsWeb.JobLive.Show do
      |> assign(job: job, page_title: job.position)
      |> assign(show_apply: false, applied: false)
      |> assign(form: to_form(Jobs.change_application(), as: :application))
-     |> allow_upload(:documents,
+     |> allow_upload(:cv,
        accept: ~w(.pdf .doc .docx),
-       max_entries: 3,
+       max_entries: 1,
+       max_file_size: 5_000_000
+     )
+     |> allow_upload(:cover_letter,
+       accept: ~w(.pdf .doc .docx),
+       max_entries: 1,
        max_file_size: 5_000_000
      )}
   end
@@ -41,39 +46,58 @@ defmodule DevjobsWeb.JobLive.Show do
     {:noreply, assign(socket, form: to_form(changeset, as: :application))}
   end
 
-  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :documents, ref)}
+  def handle_event("cancel-upload", %{"field" => "cv", "ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :cv, ref)}
+  end
+
+  def handle_event("cancel-upload", %{"field" => "cover_letter", "ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :cover_letter, ref)}
   end
 
   def handle_event("apply", %{"application" => params}, socket) do
     job = socket.assigns.job
 
-    files =
-      consume_uploaded_entries(socket, :documents, fn %{path: tmp}, entry ->
-        dir = Path.join(["priv", "uploads", to_string(job.id)])
-        File.mkdir_p!(dir)
-        dest = Path.join(dir, "#{Ecto.UUID.generate()}-#{Path.basename(entry.client_name)}")
-        File.cp!(tmp, dest)
+    changeset =
+      Jobs.change_application(%Devjobs.Jobs.Application{}, params)
+      |> maybe_add_duplicate_error(job.id, params)
+      |> Map.put(:action, :insert)
 
-        {:ok,
-         %{
-           filename: entry.client_name,
-           path: dest,
-           content_type: entry.client_type,
-           size: entry.client_size
-         }}
-      end)
+    if changeset.valid? do
+      files =
+        consume_upload(socket, :cv, "cv", job.id) ++
+          consume_upload(socket, :cover_letter, "cover_letter", job.id)
 
-    case Jobs.create_application(job, params, files) do
-      {:ok, _app} ->
-        {:noreply, assign(socket, applied: true)}
+      case Jobs.create_application(job, params, files) do
+        {:ok, _app} ->
+          {:noreply, assign(socket, applied: true)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        Enum.each(files, &File.rm(&1.path))
+        {:error, %Ecto.Changeset{} = changeset} ->
+          Enum.each(files, &File.rm(&1.path))
 
-        {:noreply,
-         assign(socket, form: to_form(Map.put(changeset, :action, :insert), as: :application))}
+          {:noreply,
+           assign(socket, form: to_form(Map.put(changeset, :action, :insert), as: :application))}
+      end
+    else
+      {:noreply, assign(socket, form: to_form(changeset, as: :application))}
     end
+  end
+
+  defp consume_upload(socket, upload_name, document_type, job_id) do
+    consume_uploaded_entries(socket, upload_name, fn %{path: tmp}, entry ->
+      dir = Path.join(["priv", "uploads", to_string(job_id)])
+      File.mkdir_p!(dir)
+      dest = Path.join(dir, "#{Ecto.UUID.generate()}-#{Path.basename(entry.client_name)}")
+      File.cp!(tmp, dest)
+
+      {:ok,
+       %{
+         document_type: document_type,
+         filename: entry.client_name,
+         path: dest,
+         content_type: entry.client_type,
+         size: entry.client_size
+       }}
+    end)
   end
 
   defp maybe_add_duplicate_error(changeset, job_id, params) do
@@ -88,7 +112,7 @@ defmodule DevjobsWeb.JobLive.Show do
 
   defp upload_error(:too_large), do: "File is too large (max 5 MB)"
   defp upload_error(:not_accepted), do: "Only PDF, DOC or DOCX files"
-  defp upload_error(:too_many_files), do: "Maximum 3 files"
+  defp upload_error(:too_many_files), do: "Only one file allowed"
   defp upload_error(_), do: "Upload failed"
 
   defp host(nil), do: ""
@@ -251,6 +275,7 @@ defmodule DevjobsWeb.JobLive.Show do
                     {msg}
                   </p>
                 </div>
+
                 <div>
                   <label for={@form[:last_name].id} class="font-bold">Last name</label>
                   <input
@@ -290,20 +315,26 @@ defmodule DevjobsWeb.JobLive.Show do
                 </p>
               </div>
 
-              <div>
-                <label class="font-bold">Documents (PDF, DOC, DOCX, max 5 MB)</label>
+              <div :for={{field, label} <- [cv: "CV", cover_letter: "Cover letter"]}>
+                <label for={@uploads[field].ref} class="font-bold">
+                  {label} (PDF, DOC, DOCX, max 5 MB)
+                </label>
                 <div class="mt-2 rounded-md border border-dashed border-dark-grey/40 p-4">
-                  <.live_file_input upload={@uploads.documents} class="w-full text-sm" />
+                  <.live_file_input upload={@uploads[field]} class="w-full text-sm" />
                 </div>
-                <p :for={err <- upload_errors(@uploads.documents)} class="mt-1 text-sm text-red-500">
+                <p
+                  :for={err <- upload_errors(@uploads[field])}
+                  class="mt-1 text-sm text-red-500"
+                >
                   {upload_error(err)}
                 </p>
-                <div :for={entry <- @uploads.documents.entries} class="mt-3">
+                <div :for={entry <- @uploads[field].entries} class="mt-3">
                   <div class="flex items-center justify-between gap-4 text-sm">
                     <span class="truncate">{entry.client_name}</span>
                     <button
                       type="button"
                       phx-click="cancel-upload"
+                      phx-value-field={field}
                       phx-value-ref={entry.ref}
                       class="cursor-pointer text-dark-grey transition hover:text-red-500"
                     >
@@ -314,7 +345,7 @@ defmodule DevjobsWeb.JobLive.Show do
                     <div class="h-1 rounded bg-violet" style={"width: #{entry.progress}%"}></div>
                   </div>
                   <p
-                    :for={err <- upload_errors(@uploads.documents, entry)}
+                    :for={err <- upload_errors(@uploads[field], entry)}
                     class="mt-1 text-sm text-red-500"
                   >
                     {upload_error(err)}

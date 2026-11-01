@@ -23,6 +23,12 @@ end
 config :devjobs, DevjobsWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+if config_env() != :test do
+  config :devjobs, :admin,
+    email: System.get_env("ADMIN_EMAIL"),
+    password: System.get_env("ADMIN_PASSWORD")
+end
+
 if config_env() == :dev do
   # Reload browser tabs when matching files change.
   config :devjobs, DevjobsWeb.Endpoint,
