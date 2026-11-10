@@ -3,7 +3,7 @@ defmodule DevjobsWeb.AdminApplicationsController do
 
   alias Devjobs.Jobs
 
-  def export(conn, _params) do
+  def export(conn, params) do
     csv =
       [
         [
@@ -19,7 +19,7 @@ defmodule DevjobsWeb.AdminApplicationsController do
           "cv_filename",
           "cover_letter_filename"
         ]
-      ] ++ Enum.map(Jobs.list_applications(), &application_row/1)
+      ] ++ Enum.map(Jobs.list_applications(params), &application_row/1)
 
     body = Enum.map_join(csv, "\r\n", fn row -> Enum.map_join(row, ",", &csv_cell/1) end)
 

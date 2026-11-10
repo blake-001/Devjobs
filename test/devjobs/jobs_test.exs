@@ -89,6 +89,57 @@ defmodule Devjobs.JobsTest do
     end
   end
 
+  describe "create_job/1" do
+    test "creates a job for an existing company" do
+      company = company!()
+
+      assert {:ok, job} =
+               Jobs.create_job(%{
+                 "position" => "Platform Engineer",
+                 "contract" => "Full Time",
+                 "location" => "Remote",
+                 "description" => "Build platform services",
+                 "requirements_items" => "Know Elixir\nUnderstand OTP\n",
+                 "role_items" => "Build systems\nReview code",
+                 "company_id" => to_string(company.id)
+               })
+
+      assert job.company_id == company.id
+      assert job.posted_at
+      assert job.requirements_items == ["Know Elixir", "Understand OTP"]
+      assert job.role_items == ["Build systems", "Review code"]
+    end
+
+    test "creates a company and its job together" do
+      assert {:ok, job} =
+               Jobs.create_job(%{
+                 "position" => "Product Designer",
+                 "contract" => "Part Time",
+                 "location" => "Nairobi",
+                 "description" => "Design a helpful product",
+                 "company_name" => "Globex",
+                 "company_website" => "https://globex.test",
+                 "company_logo_background" => "#5964E0"
+               })
+
+      assert Repo.get!(Company, job.company_id).name == "Globex"
+    end
+
+    test "does not leave a company behind when its job is invalid" do
+      assert {:error, {:job_changeset, changeset}} =
+               Jobs.create_job(%{
+                 "position" => "",
+                 "contract" => "Full Time",
+                 "location" => "Nairobi",
+                 "description" => "A job description",
+                 "company_name" => "Unpublished company"
+               })
+
+      assert changeset.errors[:position]
+      refute Repo.exists?(from c in Company, where: c.name == "Unpublished company")
+    end
+  end
+
   describe "applications" do
     setup do
       %{job: job!(company!(), %{})}
@@ -158,6 +209,30 @@ defmodule Devjobs.JobsTest do
                |> Map.fetch!(:attachments)
                |> Enum.map(&%{document_type: &1.document_type, filename: &1.filename})
                |> Enum.sort_by(& &1.document_type)
+    end
+
+    test "deletes an application but never removes attachment files outside uploads", %{job: job} do
+      external_path = Path.join(System.tmp_dir!(), "#{Ecto.UUID.generate()}-private.pdf")
+      File.write!(external_path, "keep outside uploads")
+      on_exit(fn -> File.rm(external_path) end)
+
+      assert {:ok, application} = Jobs.create_application(job, @valid)
+
+      Repo.insert!(%Attachment{
+        application_id: application.id,
+        document_type: "cv",
+        filename: "private.pdf",
+        path: external_path
+      })
+
+      assert {:error,
+              {:file_cleanup_failed, deleted_application,
+               [{"private.pdf", :outside_uploads_directory}]}} =
+               Jobs.delete_application(application.id)
+
+      assert deleted_application.id == application.id
+      refute Repo.get(Devjobs.Jobs.Application, application.id)
+      assert File.read!(external_path) == "keep outside uploads"
     end
 
     test "only accepts CV and cover letter document types" do

@@ -32,6 +32,16 @@
 /* Use the data attribute for dark mode  */
 @custom-variant dark (&:where(.dark, .dark *));
 
+#filters_contract option {
+  color: #19202d;
+  background-color: #fff;
+}
+
+.dark #filters_contract option {
+  color: #fff;
+  background-color: #19202d;
+}
+
 /* Make LiveView wrapper divs transparent for layout */
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 

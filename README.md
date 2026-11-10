@@ -21,8 +21,12 @@ mix phx.server
 Open [`http://localhost:4000/admin/login`](http://localhost:4000/admin/login) and
 sign in to review applications. The dashboard shows applicant details, the job
 description, and download links for uploaded CVs and cover letters. Use **Download
-CSV** to export application and job details. Set the same environment variables
-in the production runtime and serve the admin area over HTTPS.
+CSV** to export application and job details. Filter applications by job title or
+company, location, and contract type; the filters are reflected in the URL and
+the CSV download includes only matching applications. Use **Add new job** to
+create a listing for an existing company or enter company details to create a
+new company with the job. Set the same environment variables in the production
+runtime and serve the admin area over HTTPS.
 
 Ready to run in production? Please [check our deployment guides](https://phoenix.hexdocs.pm/deployment.html).
 

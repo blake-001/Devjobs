@@ -38,6 +38,7 @@ defmodule DevjobsWeb.Router do
 
     live_session :admin, on_mount: [{DevjobsWeb.AdminAuth, :ensure_admin}] do
       live "/applications", AdminApplicationsLive, :index
+      live "/jobs/new", AdminJobLive, :new
     end
 
     get "/applications.csv", AdminApplicationsController, :export

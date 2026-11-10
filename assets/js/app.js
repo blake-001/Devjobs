@@ -25,11 +25,23 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/devjobs"
 import topbar from "../vendor/topbar"
 
+const ConfirmDeleteApplication = {
+  mounted() {
+    this.el.addEventListener("click", event => {
+      event.preventDefault()
+
+      if (window.confirm(this.el.dataset.confirmMessage)) {
+        this.pushEvent("delete-application", {id: this.el.dataset.applicationId})
+      }
+    })
+  },
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: {...colocatedHooks, ConfirmDeleteApplication},
 })
 
 // Show progress bar on live navigation and form submits
@@ -80,4 +92,3 @@ if (process.env.NODE_ENV === "development") {
     window.liveReloader = reloader
   })
 }
-
