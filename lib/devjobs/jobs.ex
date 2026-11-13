@@ -318,4 +318,20 @@ defmodule Devjobs.Jobs do
   def get_attachment(id) do
     Repo.get(Attachment, id)
   end
+
+  def total_application_count do
+    Application |> Repo.aggregate(:count, :id)
+  end
+
+  def today_application_count do
+    start_of_day =
+      DateTime.utc_now()
+      |> DateTime.to_date()
+      |> NaiveDateTime.new(~T[00:00:00])
+      |> elem(1)
+
+    Application
+    |> where([a], a.inserted_at >= ^start_of_day)
+    |> Repo.aggregate(:count, :id)
+  end
 end

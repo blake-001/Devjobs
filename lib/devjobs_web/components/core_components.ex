@@ -336,6 +336,67 @@ defmodule DevjobsWeb.CoreComponents do
   end
 
   @doc """
+  Renders a dashboard stat card.
+  """
+  attr :label, :string, required: true
+  attr :value, :integer, required: true
+  attr :icon, :string, required: true
+  attr :trend, :string, required: false
+
+  def stat_card(assigns) do
+    ~H"""
+    <div class="rounded-lg bg-white p-6 shadow-sm dark:bg-midnight border border-dark-grey/10">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-bold text-dark-grey">{@label}</p>
+          <p class="text-3xl font-bold text-midnight dark:text-white">{@value}</p>
+          <p :if={@trend} class="mt-1 text-xs text-violet font-semibold">{@trend}</p>
+        </div>
+        <div class="p-2 rounded bg-violet/10 text-violet">
+          <.icon name={@icon} class="w-5 h-5" />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders a sidebar navigation item.
+  """
+  attr :active, :any, default: false
+  attr :navigate, :string, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+
+  def nav_item(assigns) do
+    active = Map.get(assigns, :active, false)
+
+    assigns =
+      assign(
+        assigns,
+        :classes,
+        if(active,
+          do: "bg-violet/10 text-violet",
+          else: "text-dark-grey/60 hover:text-violet hover:bg-dark-grey/50"
+        )
+      )
+
+    ~H"""
+    <.link
+      navigate={@navigate}
+      id={"nav-#{@label}"}
+      class={[
+        "flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition",
+        @classes
+      ]}
+    >
+      <.icon name={@icon} class="w-5 h-5" />
+      <span>{@label}</span>
+    </.link>
+    """
+  end
+
+  @doc """
   Renders a table with generic styling.
 
   ## Examples
