@@ -1,0 +1,63 @@
+<main class="mx-auto mt-20 max-w-md rounded-lg bg-white p-8 shadow-lg dark:bg-midnight">
+  <h1 class="text-2xl font-bold">
+    {if @purpose == "setup", do: "Set your password", else: "Reset your password"}
+  </h1>
+  <p class="mt-2 text-dark-grey">
+    Choose a password with at least 12 characters. This link can only be used once.
+  </p>
+
+  <p :if={@error} id="password-setup-error" role="alert" class="mt-4 text-sm text-red-500">
+    {@error}
+  </p>
+
+  <%= if @valid_link? do %>
+    <.form
+      for={%{}}
+      action={~p"/admin/password/setup/#{@token}"}
+      method="post"
+      id="password-setup-form"
+      class="mt-6 space-y-4"
+    >
+      <input type="hidden" name="_csrf_token" value={@csrf_token} />
+      <div>
+        <label for="new-password" class="font-bold">New password</label>
+        <input
+          id="new-password"
+          type="password"
+          name="password[password]"
+          autocomplete="new-password"
+          minlength="12"
+          maxlength="128"
+          required
+          class="mt-2 w-full rounded-md border border-dark-grey/30 bg-transparent px-4 py-3"
+        />
+      </div>
+      <div>
+        <label for="confirm-password" class="font-bold">Confirm password</label>
+        <input
+          id="confirm-password"
+          type="password"
+          name="password[password_confirmation]"
+          autocomplete="new-password"
+          minlength="12"
+          maxlength="128"
+          required
+          class="mt-2 w-full rounded-md border border-dark-grey/30 bg-transparent px-4 py-3"
+        />
+      </div>
+      <button
+        type="submit"
+        class="w-full cursor-pointer rounded-md bg-violet px-6 py-3 font-bold text-white transition hover:bg-light-violet"
+      >
+        Save password
+      </button>
+    </.form>
+  <% else %>
+    <.link
+      navigate={~p"/admin/password/forgot"}
+      class="mt-6 inline-block font-bold text-violet hover:underline"
+    >
+      Request a new link
+    </.link>
+  <% end %>
+</main>

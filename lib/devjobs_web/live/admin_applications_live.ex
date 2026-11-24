@@ -10,6 +10,7 @@ defmodule DevjobsWeb.AdminApplicationsLive do
      socket
      |> assign(page_title: "Applications")
      |> assign(:active_nav, :applications)
+     |> assign(:sidebar_collapsed?, false)
      |> load_stats()
      |> load_recent_applications(%{})}
   end
@@ -83,6 +84,10 @@ defmodule DevjobsWeb.AdminApplicationsLive do
     end
   end
 
+  def handle_event("toggle-sidebar", _params, socket) do
+    {:noreply, update(socket, :sidebar_collapsed?, &(!&1))}
+  end
+
   defp load_stats(socket) do
     total = Jobs.total_application_count() || 0
     today = Jobs.today_application_count() || 0
@@ -118,7 +123,14 @@ defmodule DevjobsWeb.AdminApplicationsLive do
     ~H"""
     <Layouts.app flash={@flash}>
       <div class="flex h-screen overflow-hidden dark:bg-midnight">
-        <aside class="hidden w-64 flex-shrink-0 flex-col border-r border-dark-grey/20 bg-white dark:bg-midnight xl:flex">
+        <aside
+          id="admin-sidebar"
+          data-state={if(@sidebar_collapsed?, do: "collapsed", else: "expanded")}
+          class={[
+            "hidden w-64 flex-shrink-0 flex-col border-r border-dark-grey/20 bg-white dark:bg-midnight",
+            !@sidebar_collapsed? && "xl:flex"
+          ]}
+        >
           <div class="p-6">
             <.link
               navigate="/admin/applications"
@@ -136,13 +148,13 @@ defmodule DevjobsWeb.AdminApplicationsLive do
             />
             <.nav_item
               active={@active_nav == :jobs}
-              navigate="/admin/jobs/new"
+              navigate="/admin/jobs"
               icon="hero-briefcase"
               label="Jobs"
             />
             <.nav_item
               active={@active_nav == :users}
-              navigate="/admin/users/new"
+              navigate="/admin/users"
               icon="hero-user-group"
               label="Users"
             />
@@ -158,11 +170,24 @@ defmodule DevjobsWeb.AdminApplicationsLive do
         </aside>
 
         <main class="flex-1 overflow-y-auto bg-dark-grey/50 dark:bg-very-dark-blue p-6">
-          <header class="mb-8">
-            <h1 class="text-3xl font-bold text-midnight dark:text-white">Job applications</h1>
-            <p class="mt-1 text-dark-grey/60 dark:text-dark-grey/40">
-              {@application_count} applications found
-            </p>
+          <header class="mb-8 flex items-start gap-4">
+            <button
+              type="button"
+              id="toggle-admin-sidebar"
+              phx-click="toggle-sidebar"
+              aria-controls="admin-sidebar"
+              aria-expanded={!@sidebar_collapsed?}
+              aria-label={if(@sidebar_collapsed?, do: "Show sidebar", else: "Hide sidebar")}
+              class="mt-1 hidden rounded-md p-2 text-dark-grey transition hover:bg-dark-grey/10 hover:text-violet xl:inline-flex"
+            >
+              <.icon name="hero-bars-3" class="h-5 w-5" />
+            </button>
+            <div>
+              <h1 class="text-3xl font-bold text-midnight dark:text-white">Job applications</h1>
+              <p class="mt-1 text-dark-grey/60 dark:text-dark-grey/40">
+                {@application_count} applications found
+              </p>
+            </div>
           </header>
 
           <!-- Stat cards -->

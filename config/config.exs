@@ -35,6 +35,7 @@ config :phoenix_live_view,
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
 config :devjobs, Devjobs.Mailer, adapter: Swoosh.Adapters.Local
+config :devjobs, :email_from, {"Devjobs", "no-reply@devjobs.local"}
 
 # Configure esbuild (the version is required)
 config :esbuild,

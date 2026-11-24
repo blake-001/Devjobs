@@ -2,12 +2,23 @@ defmodule Devjobs.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @derive {Inspect, except: []}
+  @derive {Inspect,
+           except: [
+             :password_hash,
+             :session_token,
+             :password_token_hash,
+             :password_token_purpose
+           ]}
 
   schema "users" do
     field :first_name, :string
     field :last_name, :string
     field :email, :string
+    field :password_hash, :string, redact: true
+    field :session_token, :string, redact: true
+    field :password_token_hash, :string, redact: true
+    field :password_token_purpose, :string
+    field :password_token_expires_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end

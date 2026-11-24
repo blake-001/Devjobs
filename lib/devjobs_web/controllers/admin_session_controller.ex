@@ -1,31 +1,37 @@
 defmodule DevjobsWeb.AdminSessionController do
   use DevjobsWeb, :controller
 
+  alias Devjobs.Accounts
+
   def new(conn, _params) do
     conn
     |> configure_session(renew: true)
-    |> render_login(nil)
+    |> render_login(nil, Phoenix.Flash.get(conn.assigns[:flash] || %{}, :info))
   end
 
   def create(conn, %{"admin" => %{"email" => email, "password" => password}}) do
-    credentials = Application.get_env(:devjobs, :admin, [])
+    case Accounts.authenticate_account(email, password) do
+      {:ok, :admin, admin} ->
+        conn
+        |> configure_session(renew: true)
+        |> put_session(:admin_id, admin.id)
+        |> put_session(:admin_session_token, admin.session_token)
+        |> redirect(to: ~p"/admin/applications")
 
-    if valid_credentials?(credentials, email, password) do
-      conn
-      |> configure_session(renew: true)
-      |> put_session(:admin_authenticated, true)
-      |> redirect(to: ~p"/admin/applications")
-    else
-      conn
-      |> put_status(:unauthorized)
-      |> render_login("Invalid admin credentials or admin login is not configured.")
+      {:ok, :user, user} ->
+        conn
+        |> configure_session(renew: true)
+        |> put_session(:user_id, user.id)
+        |> put_session(:user_session_token, user.session_token)
+        |> redirect(to: ~p"/admin/applications")
+
+      {:error, :invalid_credentials} ->
+        invalid_credentials(conn)
     end
   end
 
   def create(conn, _params) do
-    conn
-    |> put_status(:unauthorized)
-    |> render_login("Invalid admin credentials or admin login is not configured.")
+    invalid_credentials(conn)
   end
 
   def delete(conn, _params) do
@@ -34,26 +40,13 @@ defmodule DevjobsWeb.AdminSessionController do
     |> redirect(to: ~p"/admin/login")
   end
 
-  defp render_login(conn, error) do
-    render(conn, :new, csrf_token: get_csrf_token(), error: error)
+  defp invalid_credentials(conn) do
+    conn
+    |> put_status(:unauthorized)
+    |> render_login("Invalid email or password.", nil)
   end
 
-  defp valid_credentials?(credentials, email, password)
-       when is_binary(email) and is_binary(password) do
-    with configured_email when is_binary(configured_email) <- credentials[:email],
-         configured_password when is_binary(configured_password) <- credentials[:password] do
-      configured_email != "" and configured_password != "" and
-        secure_compare(configured_email, email) and
-        secure_compare(configured_password, password)
-    else
-      _ -> false
-    end
+  defp render_login(conn, error, info) do
+    render(conn, :new, csrf_token: get_csrf_token(), error: error, info: info)
   end
-
-  defp valid_credentials?(_credentials, _email, _password), do: false
-
-  defp secure_compare(left, right) when byte_size(left) == byte_size(right),
-    do: Plug.Crypto.secure_compare(left, right)
-
-  defp secure_compare(_left, _right), do: false
 end

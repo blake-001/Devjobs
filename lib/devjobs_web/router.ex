@@ -31,6 +31,10 @@ defmodule DevjobsWeb.Router do
     get "/login", AdminSessionController, :new
     post "/login", AdminSessionController, :create
     get "/logout", AdminSessionController, :delete
+    get "/password/forgot", AdminPasswordController, :forgot
+    post "/password/forgot", AdminPasswordController, :request_reset
+    get "/password/setup/:token", AdminPasswordController, :setup
+    post "/password/setup/:token", AdminPasswordController, :update
   end
 
   scope "/admin", DevjobsWeb do
@@ -38,7 +42,9 @@ defmodule DevjobsWeb.Router do
 
     live_session :admin, on_mount: [{DevjobsWeb.AdminAuth, :ensure_admin}] do
       live "/applications", AdminApplicationsLive, :index
+      live "/jobs", AdminJobLive, :index
       live "/jobs/new", AdminJobLive, :new
+      live "/users", AdminUsersLive, :index
       live "/users/new", AdminUsersLive, :new
     end
 

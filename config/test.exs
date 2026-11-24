@@ -22,7 +22,7 @@ config :devjobs, DevjobsWeb.Endpoint,
 
 # In test we don't send emails
 config :devjobs, Devjobs.Mailer, adapter: Swoosh.Adapters.Test
-config :devjobs, :admin, email: "test-admin@example.com", password: "test-admin-password"
+config :bcrypt_elixir, :log_rounds, 1
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false

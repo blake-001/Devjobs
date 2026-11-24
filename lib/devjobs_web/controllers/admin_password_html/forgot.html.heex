@@ -1,0 +1,44 @@
+<main class="mx-auto mt-20 max-w-md rounded-lg bg-white p-8 shadow-lg dark:bg-midnight">
+  <h1 class="text-2xl font-bold">Reset your password</h1>
+  <p class="mt-2 text-dark-grey">
+    Enter your email address and, if an account exists, we’ll send a one-time reset link.
+  </p>
+
+  <p :if={@info} id="forgot-password-info" role="status" class="mt-4 text-sm text-green-700">
+    {@info}
+  </p>
+
+  <.form
+    for={%{}}
+    action={~p"/admin/password/forgot"}
+    method="post"
+    id="forgot-password-form"
+    class="mt-6 space-y-4"
+  >
+    <input type="hidden" name="_csrf_token" value={@csrf_token} />
+    <div>
+      <label for="password-email" class="font-bold">Email</label>
+      <input
+        id="password-email"
+        type="email"
+        name="password[email]"
+        autocomplete="email"
+        required
+        class="mt-2 w-full rounded-md border border-dark-grey/30 bg-transparent px-4 py-3"
+      />
+    </div>
+    <button
+      type="submit"
+      class="w-full cursor-pointer rounded-md bg-violet px-6 py-3 font-bold text-white transition hover:bg-light-violet"
+    >
+      Send reset link
+    </button>
+  </.form>
+
+  <.link
+    navigate={~p"/admin/login"}
+    class="mt-5 inline-block font-bold text-violet hover:underline"
+  >
+    Back to sign in
+  </.link>
+</main>

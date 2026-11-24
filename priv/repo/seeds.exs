@@ -47,7 +47,8 @@ data = [
 now = DateTime.utc_now() |> DateTime.truncate(:second)
 
 for {name, color, site, position, contract, location, hours_ago} <- data do
-  company = Repo.insert!(%Company{name: name, logo_background: color, website: site})
+  company =
+    Repo.insert!(%Company{name: name, logo_background: color, website: site})
 
   Repo.insert!(%Job{
     company_id: company.id,
